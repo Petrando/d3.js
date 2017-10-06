@@ -1,0 +1,35 @@
+body {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.y.axis path, .yMale.axis path, .yFemale.axis path{
+  display: none;
+}
+
+.tooltip{
+	position: absolute;
+	text-align: center;
+	width: 60px;
+	height: 12px;
+	padding: 8px;
+	margin-top:-20px;	
+	pointer-events:none;
+}
+
+.peopleText{
+   font-size:12px;
+   font-weight:bold;
+   pointer-events:none;
+}
+
+.femaleText, .maleText{
+   font-weight:bold;
+   font-size:12px;
+}
