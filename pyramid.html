@@ -2,7 +2,7 @@
 <head>
 <meta charset="utf-8"></meta>
 <title>
-Indonesian citizens age range.
+Age range of genders
 </title>
 <style>
 body {
@@ -322,7 +322,7 @@ function render(file){
 	var mode = 	d3.selectAll("input.formationRadio[name='mode']:checked").node().value;
 	
 	var maleBars = canvas.selectAll(".maleBars")		
-		  .data(layers[0], function(d){return d.x;});		      	  
+		  .data(layers[0]);		      	  
 		  
      maleBars.enter().append("rect")
         .attr("class", "maleBars")
@@ -331,7 +331,7 @@ function render(file){
 		.attr("x", width/2);	 
 		  
     var femaleBars = canvas.selectAll(".femaleBars")		
-	      .data(layers[1], function(d){return d.x;});
+	      .data(layers[1]);
 
 	femaleBars.enter().append("rect")
 	    .attr("class", "femaleBars")
