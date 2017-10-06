@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<head>
+<meta charset="utf-8"></meta>
+<title>
+Indonesian citizens age range.
+</title>
+<style>
+body {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.y.axis path, .yMale.axis path, .yFemale.axis path{
+  display: none;
+}
+
+.tooltip{
+	position: absolute;
+	text-align: center;
+	width: 60px;
+	height: 12px;
+	padding: 8px;
+	margin-top:-20px;	
+	pointer-events:none;
+}
+
+.peopleText{
+   font-size:12px;
+   font-weight:bold;
+   pointer-events:none;
+}
+
+.femaleText, .maleText{
+   font-weight:bold;
+   font-size:12px;
+}
+</style>
+<body>
+<form>  
+  <!--<select name="Propinsi" id="Propinsi">
+    <option value="Aceh">Aceh</option>
+    <option value="Bali">Bali</option>    
+	<option value="Bangka-Belitung">Bangka-Belitung</option>
+	<option value="Banten">Banten</option>    
+	<option value="Bengkulu">Bengkulu</option>    
+	<option value="DI Yogyakarta">DI Yogyakarta</option>    
+	<option value="DKI Jakarta">DKI Jakarta</option>
+	<option value="Gorontalo">Gorontalo</option>
+	<option value="Jambi">Jambi</option>
+	<option value="Jawa Barat">Jawa Barat</option>
+	<option value="Jawa Tengah">Jawa Tengah</option>
+	<option value="Jawa Timur">Jawa Timur</option>
+  </select>-->
+  <label><input class="formationRadio" type="radio" name="mode" value="all">All</label>
+  <label><input class="formationRadio" type="radio" name="mode" value="gender" checked>Gender</label>
+  <label><input id="sort" type="checkbox">Sort</input></label>  
+</form>
+<div></div>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script>
+var margin = {top: 20, right: 250, bottom: 130, left: 250},
+    width = 1360 - margin.left - margin.right,
+    height = 600 - margin.top - margin.bottom;
+	
+function formatPeople(amt){return d3.format(",")(amt);}	
+	
+var ageRanges = [];//["0-4", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80+"];
+
+var yMale = d3.scale.ordinal()
+	//.domain(ageRanges)
+    .rangeRoundBands([height, 0], .1);
+	
+var yFemale = d3.scale.ordinal()	
+	//.domain(ageRanges)
+	.rangeRoundBands([height, 0], .1);
+
+var xMale = d3.scale.linear()	
+    .rangeRound([0, width/2]);
+	
+var xFemale	= d3.scale.linear()
+	.rangeRound([width/2, width]);
+	
+var color = d3.scale.ordinal()    
+    .range(["#98abc5", "#8a89a6"]);
+	
+var ageRangeColor = d3.scale.ordinal()	
+	.range(["#ccffe6", "#b3ffda", "#99ffce", "#80ffc1", "#66ffb5", "#4dffa9", "#33ff9c", "#1aff90", "#00ff84", "#00e677", "#00cc69",
+	        "#00b35c", "#00994f", "#008042", "#006635", "#004d28", "#00331a"]);	
+			
+var genderColor = d3.scale.ordinal()
+	.range(["#0099ff", "#ff6699"]);			
+
+var genders = [];//["Laki-laki", "Perempuan"];
+
+var xAxisMale = d3.svg.axis()
+    .scale(xMale)
+    .orient("bottom")	
+    .tickFormat(d3.format(".2s"));
+	
+var xAxisFemale = d3.svg.axis()	
+	.scale(xFemale)
+	.orient("bottom")
+    .tickFormat(d3.format(".2s"));
+
+var yAxisMale = d3.svg.axis()
+    .scale(yMale)
+    .orient("left");	
+	
+var yAxisFemale = d3.svg.axis()	
+	.scale(yFemale)
+	.orient("right");
+//var data;	
+
+var svg = d3.select("div").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom);
+	
+var canvas = svg.append("g")
+	.attr("class", "canvas")
+	.attr("transform", "translate(" + margin.left + "," + margin.top + ")");  
+	
+canvas.append("g")	
+	.attr("class", "yMale axis")
+	.call(yAxisMale);
+	
+canvas.append("g")
+	.attr("class", "xMale axis")
+	.attr("transform", "translate(0," + height + ")")
+	.call(xAxisMale);	
+	
+canvas.append("g")	
+	.attr("class", "yFemale axis")
+	.attr("transform", "translate(" + width + ",0)")
+	.call(yAxisFemale);
+		
+canvas.append("g")
+	.attr("class", "xFemale axis")
+	.attr("transform", "translate(0," + height + ")")
+	.call(xAxisFemale);	
+	
+var arc = d3.svg.arc()
+    .outerRadius(40)
+    .innerRadius(0);
+
+var pie = d3.layout.pie()
+    .sort(null)
+    .value(function(d) { return d.population; });		
+	
+var infoGroup = svg.append("g")
+	.attr("class", "infoGroup")
+	.attr("transform", function(){return "translate(" + margin.left + ", " + (margin.top + height) + ")";});
+	
+var provinceText = infoGroup.append("text")
+    .text("info")
+    .style("font-weight", "bold")	
+	.attr("font-size", "20px")
+	.attr("y", 70);
+	
+var pieData = [{gender:"Laki-laki", population:0}, {gender:"Perempuan", population:0}];		               
+	
+var pieGroup = infoGroup.append("g")	
+	.attr("transform", function(){return "translate(" + 700 + ", " + 80 + ")"});	
+	
+var pieChart = pieGroup.selectAll(".arc")
+            .data(pie(pieData), function(d){return d.data.gender;});
+	
+pieChart.enter().append("path")      
+    .style("fill", function(d) { return genderColor(d.data.gender); })	
+	.attr("d", arc)
+	.each(function(d) { this._current = d; });
+			 
+pieChart.exit().remove();	
+	
+var femaleText = infoGroup.append("text")
+    .attr("class", "femaleText")
+	.attr("x", 540)
+	.attr("y", 70)
+	.text("Female");
+	
+var maleText = infoGroup.append("text")
+    .attr("class", "maleText")
+	.attr("x", 750)
+	.attr("y", 70)
+	.text("Male");	
+  
+var isAnimating = false;  
+var x0;
+var activeLink = "none";
+
+//var maleData, femaleData;
+var previousTotal = 0, previousMale = 0, previousFemale = 0;//  ..just some additional variables, for cooler
+var prevMalePercent = 0, prevFemalePercent = 0;			//and more logical info text tweening..
+	
+function render(file){
+  d3.csv(file, function(error, data) {
+  if (error) throw error;	
+    var isNew = true;//helper variable for determine bar render delay...
+	
+	var totalPeople = 0, totalMale = 0, totalFemale = 0;    	
+    data.forEach(function(d){
+	  d.Total = 0;
+	  d["Laki-laki"]=+d["Laki-laki"];
+	  totalMale += d["Laki-laki"];
+	  
+	  d["Perempuan"]=+d["Perempuan"];	
+	  totalFemale += d["Perempuan"];
+	  
+	  d.Total += d["Laki-laki"];
+	  d.Total += d["Perempuan"];
+	  
+	  totalPeople += d.Total;
+    });
+	
+	//additional variables for pie ratio display....
+	var malePercentage = Math.round(100 * (totalMale/totalPeople));
+	var femalePercentage = Math.round(100 * (totalFemale/totalPeople));
+	
+	//set province info text each time new province data is choosen....
+	function setupProvinceInfo(){
+	     provinceText
+		    .transition().duration(500)        
+			.tween( "text", function() {					
+				var interpolator = d3.interpolateNumber(previousTotal, totalPeople);					
+				return function( t ) {
+					// set new value to current text element
+					this.textContent = "Total citizens of " + provinceName + " is " + formatPeople(Math.round(interpolator(t))) + " people.";
+				};
+			 })
+			.each("end", function(){
+			    // re-set variable for next province render...	
+		        previousTotal = totalPeople;
+		        previousMale = totalMale;		        
+			 });
+		    
+		 femaleText
+		    .transition().duration(500)        
+			.tween( "text", function() {					
+				var interpolator = d3.interpolateNumber(previousFemale, totalFemale);					
+				var iPercentage = d3.interpolateNumber(prevFemalePercent, femalePercentage);
+				return function( t ) {
+					// set new value to current text element
+					this.textContent = formatPeople(Math.round(interpolator(t))) + " females (" + iPercentage(t) + "%)";
+				};
+			 })
+			.each("end", function(){
+			    previousFemale = totalFemale;
+				prevFemalePercent = femalePercentage;
+			 });
+			 
+		 maleText
+		    .transition().duration(500)        
+			.tween( "text", function() {					
+				var interpolator = d3.interpolateNumber(previousMale, totalMale);					
+				var iPercentage = d3.interpolateNumber(prevMalePercent, malePercentage);
+				return function( t ) {
+					// set new value to current text element
+					this.textContent = formatPeople(Math.round(interpolator(t))) + " males (" + iPercentage(t) + "%)";
+				};
+			 })
+			.each("end", function(){
+			    previousMale = totalMale;
+				prevMalePercent = malePercentage;
+			 });
+		 //setup pie chart...
+		 pie.value(function(d){return d.population;});
+		 pieData = [{gender:"Laki-laki", population:totalMale}, {gender:"Perempuan", population:totalFemale}];
+		 pieChart.data(pie(pieData), function(d){return d.data.gender;});
+
+		 pieChart.transition().duration(500).attrTween("d", function(d){
+		    var i = d3.interpolate(this._current, d);
+	        this._current = i(0);  
+	        return function(t) {	    
+		       return arc(i(t));
+	        };
+		 });
+	}		
+	  
+	setupProvinceInfo();	
+	
+    console.log(data); 		
+	if(genders.length === 0){
+	    genders = d3.keys(data[0]).filter(function(key){return key!="Umur";});		
+		genderColor.domain(genders);
+	}
+	
+	var layers = d3.layout.stack()(genders.map(function(c) {
+      //console.log(c);
+      return data.map(function(d) {
+	    //console.log(d);
+        return {x: d["Umur"], y: +d[c], total: d.Total};
+      });
+    }));
+  
+    console.log(layers);
+    
+	var totalMax = d3.max(layers[0], function(d){return d.total;});//since total is the same for male and female
+																//just call d3.max once for a single layer....
+    var maleMax = d3.max(layers[0], function(d){return d.y;});
+    var maleSum = d3.sum(layers[0], function(d){return d.y;});
+	var femaleMax = d3.max(layers[1], function(d){return d.y;});
+    var femaleSum = d3.sum(layers[1], function(d){return d.y;});
+	
+	var totalPopulation = maleSum + femaleSum;
+	var maxPopulation = Math.max(maleMax, femaleMax);
+    
+	//console.log(d3.keys(data[0]).filter(function(key){return key!="Laki-laki" && key!="Perempuan";}));
+	//console.log(data.map(function(d){return d.Umur;}));
+	
+	if(ageRanges.length === 0){
+	      ageRanges = data.map(function(d){return d.Umur;});	        		   			    	
+		  ageRangeColor.domain(ageRanges);
+	}
+	
+    d3.select("input#sort").property("checked", false);    	
+    setupYAxises();
+
+    function setupYAxises(){
+	   yMale.domain(ageRanges);
+	   yFemale.domain(ageRanges);
+	
+	   canvas.select(".yMale.axis")
+	         .transition().duration(1000)
+	      .call(yAxisMale);
+		
+       canvas.select(".yFemale.axis")
+			 .transition().duration(1000)
+	      .call(yAxisFemale);
+	}
+	
+	var mode = 	d3.selectAll("input.formationRadio[name='mode']:checked").node().value;
+	
+	var maleBars = canvas.selectAll(".maleBars")		
+		  .data(layers[0], function(d){return d.x;});		      	  
+		  
+     maleBars.enter().append("rect")
+        .attr("class", "maleBars")
+		.style("fill", "#0099ff")
+		.attr("width", 0)
+		.attr("x", width/2);	 
+		  
+    var femaleBars = canvas.selectAll(".femaleBars")		
+	      .data(layers[1], function(d){return d.x;});
+
+	femaleBars.enter().append("rect")
+	    .attr("class", "femaleBars")
+		.style("fill", "#ff6699")
+		.attr("width", 0)
+		.attr("x", width/2);
+	
+	function renderGenders(){
+	   xMale.domain([maxPopulation, 0]).range([0, width/2]);//need to re-adjust the .range also...
+	   xFemale.domain([0, maxPopulation]);
+	
+	   canvas.select(".xMale.axis")
+	         .transition().duration(1000)
+	      .call(xAxisMale);
+		
+       canvas.select(".xFemale.axis")		
+			 .transition().duration(1000)
+		  .call(xAxisFemale)
+		     .style("opacity", 1);
+		
+       canvas.select(".yFemale.axis")
+			 .transition().duration(1000)
+		     .style("opacity", 1);				    	       
+		
+       /*maleBars
+	      .attr("width", 0)
+		  .attr("x", width/2);		  */
+		
+       maleBars
+	      .on("mouseover", function(d){
+		      //console.log(d);
+		      d3.select(this).style("stroke", "black").style("stroke-width", 1.5);
+			  
+			  canvas.select(".yMale.axis").selectAll("text")
+			        .filter(function(dText){return dText === d.x;})
+				 .attr("font-size", 14)
+			     .style("font-weight", "bold");
+				 
+			  var tipX = d3.mouse(this)[0];			  
+				 
+              canvas.append("text")
+				 .attr("class", "peopleText")
+				 .text(formatPeople(d.y) + " males.")				 
+				 .attr("x", ((tipX - 90) < 10?10:tipX - 90))
+				 .attr("y", yMale(d.x) +15);
+		   })
+		  .on("mousemove", function(d){
+		      var tipX = d3.mouse(this)[0];
+			  
+		      canvas.select(".peopleText")
+				 .attr("x", ((tipX - 90) < 10?10:tipX - 90))
+				 .attr("y", yMale(d.x) + 15);
+		   })
+		  .on("mouseout", function(d){
+		      d3.select(this).style("stroke", "none").style("stroke-width", 0);
+			  
+			  canvas.select(".yMale.axis").selectAll("text")
+			        .filter(function(dText){return dText === d.x;})
+				 .attr("font-size", 10)
+			     .style("font-weight", "normal");
+				 
+			  canvas.select(".peopleText").remove();
+		   });		
+		
+       maleBars
+	         .transition().duration(1000).delay(isNew?0:1500)
+	      .attr("y", function(d){return yMale(d.x);})
+		  .attr("height", yMale.rangeBand())
+		  .attr("x", function(d){return xMale(d.y);})		
+		  .attr("width", function(d){return width/2 - xMale(d.y);})
+		     //.transition().duration(250)
+		  .style("fill", "#0099ff");		       		       
+		
+	   /*femaleBars.enter().append("rect")
+		  .attr("width", 0)
+		  .attr("x", width/2)
+		  .attr("class", "femaleBars")
+		  .style("fill", "pink");*/
+		
+       femaleBars
+	      .on("mouseover", function(d){
+		      d3.select(this).style("stroke", "black").style("stroke-width", 1.5);
+			  
+			  canvas.select(".yFemale.axis").selectAll("text")
+			        .filter(function(dText){return dText === d.x;})
+				 .attr("font-size", 14)
+			     .style("font-weight", "bold");
+				 
+			  var tipX = d3.mouse(this)[0];
+				 
+			  canvas.append("text")
+				 .attr("class", "peopleText")
+				 .text(formatPeople(d.y) + " females.")				 
+				 .attr("x", ((tipX + 10) > width - 100?width - 100:tipX + 10))
+				 .attr("y", yFemale(d.x) +15);
+		   })
+		  .on("mousemove", function(d){
+		      var tipX = d3.mouse(this)[0];
+			  
+		      canvas.select(".peopleText")
+				 .attr("x", ((tipX + 10) > width - 100?width - 100:tipX + 10))
+				 .attr("y", yFemale(d.x) + 15);
+		   })
+		  .on("mouseout", function(d){
+		      d3.select(this).attr("stroke", "none").style("stroke-width", 0);
+			  
+			  canvas.select(".yFemale.axis").selectAll("text")
+			        .filter(function(dText){return dText === d.x;})
+				 .attr("font-size", 10)
+			     .style("font-weight", "normal");
+				 
+			  canvas.select(".peopleText").remove();
+		   });		
+		
+       femaleBars
+	         .transition().duration(1000).delay(isNew?0:1000)
+	      .attr("y", function(d){return yFemale(d.x);})
+		  .attr("height", yFemale.rangeBand())
+		  .attr("x", width/2)		
+		  .attr("width", function(d){return xFemale(d.y) - width/2;})
+		     //.transition().duration(250)
+		  .style("fill", "#ff6699");		   
+	}
+	
+	function renderTotal(){	   
+	   canvas.select(".xFemale.axis")		
+			 .transition().duration(1000)		  
+		  .style("opacity", 0);
+		  
+	   canvas.select(".yFemale.axis")		
+			 .transition().duration(1000)		  
+		  .style("opacity", 0);
+		  
+       xMale.domain([0, totalMax]).rangeRound([0, width]);		  
+	   
+	   canvas.select(".xMale.axis")		
+			 .transition().duration(1000)		  
+	      .call(xAxisMale);
+		  
+	   /*maleBars
+	      .attr("width", 0)
+		  .attr("x", width/2);*/
+	   
+	   maleBars
+	         .transition().duration(1000).delay(isNew?0:1000)
+		  .attr("y", function(d){return yMale(d.x);})
+		  .attr("height", yMale.rangeBand())	 
+	      .attr("x", function(d) { return xMale(d.y0); })
+		  .attr("width", function(d){return xMale(d.y0 + d.y) - xMale(d.y0);})
+		     //.transition().duration(250)
+		  .style("fill", function(d){return ageRangeColor(d.x);});
+	      //.attr("width", function(d){return xMale(d.y);});
+		  
+	   maleBars
+	      .on("mouseover", function(d){
+		      canvas.selectAll("rect")
+			        .filter(function(dRect){return dRect.x === d.x;})
+			     .style("fill", "#ffff33");
+				 
+		      canvas.select(".yMale.axis").selectAll("text")
+			        .filter(function(dText){return dText === d.x;})
+				 .attr("font-size", 14)
+			     .style("font-weight", "bold");
+				 
+		      mouseOverTip(d, d3.mouse(this)[0]);
+		   })
+		  .on("mousemove", function(d){
+		      mouseMoveTip(d3.mouse(this)[0]);
+		   })
+		  .on("mouseout", function(d){
+		      canvas.selectAll("rect")
+			        .filter(function(dRect){return dRect.x === d.x;})
+			     .style("fill", function(dRect){return ageRangeColor(dRect.x);});
+				 
+			  canvas.select(".yMale.axis").selectAll("text")
+			        .filter(function(dText){return dText === d.x;})
+				 .attr("font-size", 10)
+			     .style("font-weight", "normal");
+				 
+			  canvas.select(".peopleText").remove();
+		   });
+		  
+		femaleBars
+	         .transition().duration(1000).delay(isNew?0:1500)
+		  .attr("y", function(d){return yMale(d.x);})
+		  .attr("height", yMale.rangeBand())
+	      .attr("x", function(d) { return xMale(d.y0); })
+	      .attr("width", function(d){return xMale(d.y0 + d.y) - xMale(d.y0);})
+		     //.transition().duration(250)
+		  .style("fill", function(d){return ageRangeColor(d.x);});
+
+	   femaleBars
+	      .on("mouseover", function(d){
+		      canvas.selectAll("rect")
+			        .filter(function(dRect){return dRect.x === d.x;})
+			     .style("fill", "#ffff33");
+				 
+		      canvas.select(".yMale.axis").selectAll("text")
+			        .filter(function(dText){return dText === d.x;})
+				 .attr("font-size", 14)
+			     .style("font-weight", "bold");
+		   
+		      mouseOverTip(d, d3.mouse(this)[0]);
+		   })
+		  .on("mousemove", function(d){
+		      mouseMoveTip(d3.mouse(this)[0]);
+		   })
+		  .on("mouseout", function(d){
+		      canvas.selectAll("rect")
+			        .filter(function(dRect){return dRect.x === d.x;})
+			     .style("fill", function(dRect){return ageRangeColor(dRect.x);});
+				 
+			  canvas.select(".yMale.axis").selectAll("text")
+			        .filter(function(dText){return dText === d.x;})
+				 .attr("font-size", 10)
+			     .style("font-weight", "normal");
+				 
+			  canvas.select(".peopleText").remove();
+		   });
+		   
+		   function mouseOverTip(d, tipX){
+		      canvas.append("text")
+				 .attr("class", "peopleText")
+				 .text(formatPeople(d.total) + " people.")				 
+				 .attr("x", tipX + 10)
+				 .attr("y", yMale(d.x) +15);				 				 
+		   }
+		   
+		   function mouseMoveTip(tipX){
+		      canvas.select(".peopleText")
+				 .attr("x", tipX + 10);				 				 				 
+		   }
+	}		
+		   
+	maleBars.exit().remove();
+	femaleBars.exit().remove();
+	
+	if(d3.selectAll("input.formationRadio[name='mode']:checked").node().value === "gender")renderGenders();
+	else renderTotal();
+	
+	isNew = false;
+	
+	d3.selectAll("input.formationRadio").on("change", changeFormation);
+	  
+	function changeFormation() {
+	    //clearTimeout(timeout);
+		d3.select("input#sort").property("checked", false);    
+		setupYAxises();
+		
+	    if (this.value === "gender") renderGenders();
+		else renderTotal();
+    }		
+	
+	d3.select("input#sort").on("change", change);
+
+    function change(){
+	   var transition = svg.transition().duration(750),
+          delay = function(d, i) { return i * 50; };
+		  
+	   if(d3.selectAll("input.formationRadio[name='mode']:checked").node().value === "gender"){
+	      var y0Male = yMale.domain(layers[0].sort(this.checked
+           ? function(a, b) { return b.y - a.y; }
+           : function(a, b) { return ageRanges.indexOf(a.x) - ageRanges.indexOf(b.x); })
+           .map(function(d) { return d.x; }))
+           .copy();
+		
+		  canvas.selectAll(".maleBars")
+             .sort(function(a, b) { return y0Male(a.y) - y0Male(b.y); });				 
+		
+		  transition.selectAll(".maleBars")
+                .delay(delay)
+             .attr("y", function(d) { return y0Male(d.x); });
+		
+		  transition.select(".canvas").select(".yMale.axis")
+                .call(yAxisMale)
+             .selectAll("g")
+                .delay(delay);
+		
+		  var y0Female = yFemale.domain(layers[1].sort(this.checked
+           ? function(a, b) { return b.y - a.y; }
+           : function(a, b) { console.log(a.x);return ageRanges.indexOf(a.x) - ageRanges.indexOf(b.x); })
+           .map(function(d) { return d.x; }))
+           .copy();
+		
+		  canvas.selectAll(".femaleBars")
+             .sort(function(a, b) { return y0Female(a.y) - y0Female(b.y); });				
+		
+		  transition.selectAll(".femaleBars")
+                .delay(delay)
+             .attr("y", function(d) { return y0Female(d.x); });
+		
+		  transition.select(".canvas").select(".yFemale.axis")
+                .call(yAxisFemale)
+             .selectAll("g")
+                .delay(delay);
+	   }
+	   else{
+	      var y0Male = yMale.domain(layers[0].sort(this.checked
+           ? function(a, b) { return b.total - a.total; }
+           : function(a, b) { return ageRanges.indexOf(a.x) - ageRanges.indexOf(b.x); })
+           .map(function(d) { return d.x; }))
+           .copy();
+		
+		  canvas.selectAll(".maleBars")
+             .sort(function(a, b) { return y0Male(a.y) - y0Male(b.y); });				 
+		
+		  transition.selectAll(".maleBars")
+                .delay(delay)
+             .attr("y", function(d) { return y0Male(d.x); });
+		
+		  transition.select(".canvas").select(".yMale.axis")
+                .call(yAxisMale)
+             .selectAll("g")
+                .delay(delay);
+				
+		  canvas.selectAll(".femaleBars")
+             .sort(function(a, b) { return y0Male(a.y) - y0Male(b.y); });				 
+		
+		  transition.selectAll(".femaleBars")
+                .delay(delay)
+             .attr("y", function(d) { return y0Male(d.x); });
+	   }
+    }
+   });  
+}
+
+
+//..initial render condition...
+render("people.csv");
+var provinceName = "Aceh";
+
+/*d3.select("#Propinsi").on("change", ProvinceChange);
+
+function ProvinceChange() {
+    provinceName = this.options[this.selectedIndex].value;
+	console.log(typeof provinceName);	
+	var provinceAddress = "data/" + provinceName + ".csv";
+	render(provinceAddress);
+	
+}*/
+
+</script>
+</body>
+</head>
