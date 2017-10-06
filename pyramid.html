@@ -42,21 +42,7 @@ body {
 }
 </style>
 <body>
-<form>  
-  <!--<select name="Propinsi" id="Propinsi">
-    <option value="Aceh">Aceh</option>
-    <option value="Bali">Bali</option>    
-	<option value="Bangka-Belitung">Bangka-Belitung</option>
-	<option value="Banten">Banten</option>    
-	<option value="Bengkulu">Bengkulu</option>    
-	<option value="DI Yogyakarta">DI Yogyakarta</option>    
-	<option value="DKI Jakarta">DKI Jakarta</option>
-	<option value="Gorontalo">Gorontalo</option>
-	<option value="Jambi">Jambi</option>
-	<option value="Jawa Barat">Jawa Barat</option>
-	<option value="Jawa Tengah">Jawa Tengah</option>
-	<option value="Jawa Timur">Jawa Timur</option>
-  </select>-->
+<form>   
   <label><input class="formationRadio" type="radio" name="mode" value="all">All</label>
   <label><input class="formationRadio" type="radio" name="mode" value="gender" checked>Gender</label>
   <label><input id="sort" type="checkbox">Sort</input></label>  
@@ -143,7 +129,7 @@ canvas.append("g")
 	.attr("class", "xFemale axis")
 	.attr("transform", "translate(0," + height + ")")
 	.call(xAxisFemale);	
-	
+/*	
 var arc = d3.svg.arc()
     .outerRadius(40)
     .innerRadius(0);
@@ -187,7 +173,7 @@ var maleText = infoGroup.append("text")
     .attr("class", "maleText")
 	.attr("x", 750)
 	.attr("y", 70)
-	.text("Male");	
+	.text("Male");	*/
   
 var isAnimating = false;  
 var x0;
@@ -218,7 +204,7 @@ function render(file){
     });
 	
 	//additional variables for pie ratio display....
-	var malePercentage = Math.round(100 * (totalMale/totalPeople));
+	/*var malePercentage = Math.round(100 * (totalMale/totalPeople));
 	var femalePercentage = Math.round(100 * (totalFemale/totalPeople));
 	
 	//set province info text each time new province data is choosen....
@@ -281,7 +267,7 @@ function render(file){
 		 });
 	}		
 	  
-	setupProvinceInfo();	
+	setupProvinceInfo();*/
 	
     console.log(data); 		
 	if(genders.length === 0){
@@ -675,17 +661,6 @@ function render(file){
 
 //..initial render condition...
 render("people.csv");
-var provinceName = "Aceh";
-
-/*d3.select("#Propinsi").on("change", ProvinceChange);
-
-function ProvinceChange() {
-    provinceName = this.options[this.selectedIndex].value;
-	console.log(typeof provinceName);	
-	var provinceAddress = "data/" + provinceName + ".csv";
-	render(provinceAddress);
-	
-}*/
 
 </script>
 </body>
